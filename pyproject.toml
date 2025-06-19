@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "elektrum"
+version = "0.1.0"
+description = "Kinetic modeling tools"
+authors = [
+    { name="Adam Lamson", email="adam.r.lamson@gmail.com" }
+]
+readme = "README.md"
+requires-python = "<=3.8"
+dependencies = [
+    "numpy",
+    "scikit-learn",
+    "pandas",
+    "pyyaml"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
