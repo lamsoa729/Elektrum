@@ -21,13 +21,20 @@ This repo hosts the scripts and jupyter notebooks to run AMBER-based neural arch
 
 ## Getting started
 
-Elektrum is developed in Linux HPC environment with Python 3.7 and Keras 2.2.5/Tensorflow 1.15, with its software dependency managed by Anaconda.
+Elektrum is developed in Linux HPC environment with Python 3.7 and Keras 2.2.5/Tensorflow 1.15, with its software dependency managed by Conda-Forge.
 
 We recommend you create a new conda environment for Elektrum. To start, use the following command:
 ```
-conda create -n elektrum -c anaconda tensorflow-gpu=1.15.0 keras scikit-learn numpy~=1.18.5 h5py~=2.10.0 matplotlib seaborn
+git clone https://github.com/lamsoa729/Elektrum.git
+cd Elektrum
+```
+
+Then, you can create a new conda environment with the following command:
+```bash
+conda create -n elektrum keras=2.2.5 scikit-learn numpy~=1.18.5 h5py~=2.10.0 matplotlib seaborn python=3.7.0    
 conda activate elektrum
-pip install amber-automl==0.1.3 keras-multi-head==0.29.0 watermark
+pip install tensorflow==1.15.0 amber-automl==0.1.3 keras-multi-head==0.29.0 watermark
+pip install -e .
 ```
 
 Upon successful creation, you will have a conda environment that satisfy all dependency requirements for Elektrum. Elektrum uses custom python scripts in `src` folder; no installation is needed.
