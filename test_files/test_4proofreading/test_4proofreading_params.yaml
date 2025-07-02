@@ -14,14 +14,14 @@ Rates:
     state_list: ["0", "1"]
     base_rate: .01
     stat_barrier: 0
-    input_range: [0, 5]
+    input_range: [0, 1]
     weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
 
   - name: "k_{10}"
     state_list: ["1", "0"]
     base_rate: .01
     stat_barrier: 0
-    input_range: [0, 5]
+    input_range: [1, 5]
     weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
 
   - name: "k_{12}"

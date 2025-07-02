@@ -2,7 +2,7 @@
 Title: "test_4ring"
 Input:
   seq_length: 20
-  template: "AAAAAAAAAAAAAAAAAAAA"
+  template: "AAAAAAA"
   values: ["A", "B"]
 States:
   - "0"
@@ -14,51 +14,51 @@ Rates:
     state_list: ["0", "1"]
     base_rate: .01
     stat_barrier: 0
-    input_range: [0, 5]
-    weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
+    input_range: [0, 1]
+    weight_distr: "nuc_distr(length, ind_scale=[0.0, 1.0])"
 
   - name: "k_{10}"
     state_list: ["1", "0"]
     base_rate: .01
     stat_barrier: 0
-    input_range: [0, 5]
-    weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
+    input_range: [1, 2]
+    weight_distr: "nuc_distr(length, ind_scale=[0.0, -2.0])"
 
   - name: "k_{12}"
     state_list: ["1", "2"]
     base_rate: .01
     stat_barrier: 0
-    input_range: [5, 10]
-    weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
+    input_range: [2, 3]
+    weight_distr: "nuc_distr(length, ind_scale=[0.0, 1.0])"
 
   - name: "k_{21}"
     state_list: ["2", "1"]
     base_rate: .01
     stat_barrier: 0
-    input_range: [5, 10]
-    weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
+    input_range: [3, 4]
+    weight_distr: "nuc_distr(length, ind_scale=[0.0, -2.0])"
 
   - name: "k_{23}"
     state_list: ["2", "3"]
     base_rate: .01
     stat_barrier: 0
-    input_range: [10, 15]
-    weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
+    input_range: [4, 5]
+    weight_distr: "nuc_distr(length, ind_scale=[0.0, 1.0])"
 
   - name: "k_{32}"
     state_list: ["3", "2"]
     base_rate: .01
     stat_barrier: 0
-    input_range: [10, 15]
-    weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
+    input_range: [5, 6]
+    weight_distr: "nuc_distr(length, ind_scale=[0.0, -2.0])"
 
   - name: "k_{30}"
     state_list: ["3", "0"]
     base_rate: .01
     stat_barrier: 0
-    input_range: [15, 20]
-    weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
+    input_range: [6, 7]
+    weight_distr: "nuc_distr(length, ind_scale=[0.0, 1.0])"
 Data:
-  npoints: 20000
+  npoints: 2000
   contrib_rate_names: ["k_{30}"]
-  mut_num: 2
+  mut_num: [0, 1, 2, 3]

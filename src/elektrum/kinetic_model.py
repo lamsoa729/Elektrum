@@ -8,116 +8,13 @@ from pprint import pprint
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 import pandas as pd
 from copy import deepcopy
-# from src.kinetic_model_helpers import (gen_pos_weight_mat,
-#                                        nuc_distr, sigmoid,
-#                                        make_encoders)
 
-# from elektrum.kinetic_model_helpers import (
-#     gen_pos_weight_mat,
-#     nuc_distr,
-#     sigmoid,
-#     make_encoders,
-# )
-
-
-def make_encoders(values: List):
-    """Generate label and one-hot encoder functions
-
-    Parameters
-    ----------
-    values : list
-        List of label values used to make one-hot encoder
-        TODO: Give an example
-
-    Returns
-    -------
-    LabelEncoder
-        [description]
-    OneHotEncoder
-        [description]
-
-    Examples
-    --------
-
-    """
-    # Create a label encoder that fits the values specified
-    lab_enc = LabelEncoder()
-    lab_enc.fit(values)
-    tmp = lab_enc.transform(values)
-    tmp = tmp.reshape(len(tmp), 1)
-
-    # Create one hot encoder for the values in sequence
-    one_enc = OneHotEncoder(sparse=False)
-    _ = one_enc.fit(tmp)
-    return lab_enc, one_enc
-
-
-def gen_pos_weight_mat(
-    guide_seq: str,
-    seq_range: List,
-    ind_scale: List = [1.0, -1.0],
-    label_values: List = ["A", "C", "G", "T"],
-) -> np.ndarray:
-    """Make a position weight matrix contribution to rate based on template sequence given
-
-    Parameters
-    ----------
-    guide_seq : str
-        String of the guide sequence
-    seq_range : list
-        Indices that specify the sequence range that contribute to rate
-    ind_scale : list, optional
-        When matching the correct label, the nucleotide contributes the first
-        index and when not matching it contributes the second,
-        by default [1., -1.]
-    nuc_order : list, optional
-        Labels of the 'nucleotide' labels, by default ["A", "C", "G", "T"]
-
-    Returns
-    -------
-    2D numpy.ndarray
-        Position weight matrix that contributes to kinetic rate
-
-    Examples
-    --------
-    >>> gen_pos_weight_mat('TCGGTAGGATCGTAAGATAGTATT', [1, 6], ind_scale=[1.0, -1.0])
-    array([[-1.,  1., -1., -1.],
-           [-1., -1.,  1., -1.],
-           [-1., -1.,  1., -1.],
-           [-1., -1., -1.,  1.],
-           [ 1., -1., -1., -1.]])
-    """
-    assert guide_seq
-    template_seq = list(guide_seq)[seq_range[0] : seq_range[1]]
-
-    lab_enc, one_enc = make_encoders(label_values)
-    tmp = lab_enc.transform(template_seq)
-    # one hot encode section of the guide sequence
-    seq_ohe = one_enc.transform(tmp.reshape(-1, 1))
-    # Set all weight values equal to lower contributing weight.
-    #   Weight matrix has rows equal to the length of sequence range and
-    #   columns equal to the number of label values
-    weight_mat = np.repeat(
-        np.asarray([[float(ind_scale[1])] * len(label_values)]),
-        len(template_seq),
-        axis=0,
-    )
-    # Add back lower weight and higher contributing weight but only for
-    # the nucleotides that match the templated string
-    weight_mat += seq_ohe[...] * float(ind_scale[0] - ind_scale[1])
-    return weight_mat
-
-
-def nuc_distr(rate_dep_range, ind_scale):
-    weight_mat = np.repeat(np.asarray([ind_scale]), rate_dep_range, axis=0)
-    return weight_mat
-
-
-def sigmoid(scale=1.0, trans=0.0, amp=1.0):
-    def sigmoid_func(activity):
-        return amp * (1.0 / (1.0 + np.exp(-(activity - trans) / scale)))
-
-    return sigmoid_func
+from elektrum.kinetic_model_helpers import (
+    gen_pos_weight_mat,
+    nuc_distr,
+    sigmoid,
+    make_encoders,
+)
 
 
 def convert_nn_rate_to_rate_dict(layer_attrs: dict) -> dict:
@@ -143,11 +40,7 @@ def modelSpace_to_modelParams(model_arcs):
 
     Example yaml config file for model:
 
-    States:
-    - '0'
-    - '1'
-    - '2'
-    - '3'
+    States: [ '0', '1', '2', '3' ]
     Rates:
     - name: "k_{01}"
         state_list: ['0', '1']
@@ -516,23 +409,6 @@ class KineticModel:
         return np.array(kin_seq_mat)
 
     def get_activity(self, seq: str):
-        """TODO: Add unit tests and documentation
-
-        Parameters
-        ----------
-        seq : str
-            _description_
-
-        Returns
-        -------
-        _type_
-            _description_
-
-        Raises
-        ------
-        ValueError
-            _description_
-        """
         kin_seq_mat = self.get_kinetic_mat_for_seq(seq)
         # Find the eigenvalues of matrix. Sort in descending size order
         eigvals = sorted(np.linalg.eigvals(kin_seq_mat).tolist(), reverse=True)
@@ -662,7 +538,7 @@ class KineticModel:
 
         df = pd.DataFrame.from_dict(data_dict)
         file_name = Path(self.save_str + (".tsv"))
-        df.to_csv(file_name, sep="\t", index=False)
+        df.to_csv(file_name, sep="\t", index=False, float_format="%.5f")
 
 
 ###########################################################
@@ -760,29 +636,30 @@ class KingAltmanKineticModel(KineticModel):
         """
         rate_list = []
         new_end_states = []
-        used_lids = []
-        for lid in link_ids:
+        used_link_ids = []
+        for l_id in link_ids:
             for es in end_states:
-                for rate in self.links[lid].rates:
+                for rate in self.links[l_id].rates:
                     # If rate ends in an end state, add it to rate list
                     if rate.state_list[1] == es:
                         rate_list += [rate]
                         # Next recursive statement needs to know about new end
                         # state
                         new_end_states += [rate.state_list[0]]
-                        used_lids += [lid]
+                        used_link_ids += [l_id]
                         break
                 # Don't need to continue loop if link was used
-                if lid in used_lids:
+                if l_id in used_link_ids:
                     break
+
         # Find all links not used and pass them to next recursion step
-        unused_lids = [lid for lid in link_ids if lid not in used_lids]
-        if len(unused_lids) == len(link_ids):
+        unused_link_ids = [l_id for l_id in link_ids if l_id not in used_link_ids]
+        if len(unused_link_ids) == len(link_ids):
             # Could not find kinetic rate for pattern
             return []
-        if len(unused_lids) == 0:
+        if len(unused_link_ids) == 0:
             return rate_list
-        next_rate = self.calc_KA_rate_product(new_end_states, unused_lids)
+        next_rate = self.calc_KA_rate_product(new_end_states, unused_link_ids)
         if not next_rate:
             return []
         return rate_list + next_rate
@@ -914,9 +791,14 @@ class KingAltmanKineticModel(KineticModel):
             + ["raw_activity"]
             + ["phenotype_activity"]
         )
+        # Convert numeric columns to float
+        for col in df.columns:
+            if col != "seq":  # Skip the "seq" column
+                df[col] = pd.to_numeric(df[col], errors="coerce")
 
         file_name = Path(self.save_str + (".csv"))
-        df.to_csv(file_name)
+        print(df.dtypes)
+        df.to_csv(file_name, sep=",", float_format="%.5g")
         self.save_ka_matrix()
         self.save_rate_contrib_matrix(contrib_rate_names)
 
