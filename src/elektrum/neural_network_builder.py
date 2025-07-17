@@ -120,7 +120,7 @@ class KineticNeuralNetworkBuilder(ModelBuilder):
         tf.keras.backend.set_session(self.session)
 
     def _build_inputs(self):
-        """TODO what does this do?
+        """Build input layer for the neural network based on the kinetic model's input ranges
 
         Returns
         -------

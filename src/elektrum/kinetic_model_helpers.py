@@ -37,9 +37,13 @@ def make_encoders(values: List):
     return lab_enc, one_enc
 
 
-def gen_pos_weight_mat(guide_seq: str, seq_range: List, ind_scale: List = [1., -1.],
-                       label_values: List = ["A", "C", "G", "T"]) -> np.ndarray:
-    """ Make a position weight matrix contribution to rate based on template sequence given
+def gen_pos_weight_mat(
+    guide_seq: str,
+    seq_range: List,
+    ind_scale: List = [1.0, -1.0],
+    label_values: List = ["A", "C", "G", "T"],
+) -> np.ndarray:
+    """Make a position weight matrix contribution to rate based on template sequence given
 
     Parameters
     ----------
@@ -68,8 +72,8 @@ def gen_pos_weight_mat(guide_seq: str, seq_range: List, ind_scale: List = [1., -
            [-1., -1., -1.,  1.],
            [ 1., -1., -1., -1.]])
     """
-    assert(guide_seq)
-    template_seq = list(guide_seq)[seq_range[0]:seq_range[1]]
+    assert guide_seq
+    template_seq = list(guide_seq)[seq_range[0] : seq_range[1]]
 
     lab_enc, one_enc = make_encoders(label_values)
     tmp = lab_enc.transform(template_seq)
@@ -80,7 +84,9 @@ def gen_pos_weight_mat(guide_seq: str, seq_range: List, ind_scale: List = [1., -
     #   columns equal to the number of label values
     weight_mat = np.repeat(
         np.asarray([[float(ind_scale[1])] * len(label_values)]),
-        len(template_seq), axis=0)
+        len(template_seq),
+        axis=0,
+    )
     # Add back lower weight and higher contributing weight but only for
     # the nucleotides that match the templated string
     weight_mat += seq_ohe[...] * float(ind_scale[0] - ind_scale[1])
@@ -92,7 +98,25 @@ def nuc_distr(rate_dep_range, ind_scale):
     return weight_mat
 
 
-def sigmoid(scale=1., trans=.0, amp=1.):
+free_energy_mat = nuc_distr
+
+
+def sigmoid(scale=1.0, trans=0.0, amp=1.0):
     def sigmoid_func(activity):
-        return amp * (1. / (1. + np.exp(-(activity - trans) / scale)))
+        return amp * (1.0 / (1.0 + np.exp(-(activity - trans) / scale)))
+
     return sigmoid_func
+
+
+def single_free_energy_mat(
+    energy_of_species: Sequence[float] = [0.0, 1.0],
+) -> np.ndarray:
+    energy_mat = np.asarray([energy_of_species])
+    return energy_mat
+
+
+def single_free_energy_mat_from_kinetic_rates(
+    rate_of_species: Sequence[float] = [1.0, 2.0],
+) -> np.ndarray:
+    energy_mat = -np.log([rate_of_species])
+    return energy_mat

@@ -7,13 +7,17 @@ import numpy as np
 from pprint import pprint
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 import pandas as pd
+from scipy.special import comb
 from copy import deepcopy
 
 from elektrum.kinetic_model_helpers import (
     gen_pos_weight_mat,
     nuc_distr,
+    free_energy_mat,
     sigmoid,
     make_encoders,
+    single_free_energy_mat,
+    single_free_energy_mat_from_kinetic_rates,
 )
 
 
@@ -141,14 +145,14 @@ class RateFunc:
         else:
             self.__dict__ = params
             self.is_nn_rate = False
-        if not "stat_barrier" in self.__dict__:
+        if "stat_barrier" not in self.__dict__:
             self.stat_barrier = 0
-        if not "base_rate" in self.__dict__:
+        if "base_rate" not in self.__dict__:
             self.base_rate = 1
         self.template = template
-        self.mat = self.build_mat()
+        self.energy_mat = self.build_energy_mat()
 
-    def build_mat(self):
+    def build_energy_mat(self):
         """TODO: Add unit tests
 
         Returns
@@ -167,7 +171,7 @@ class RateFunc:
         """Equivalent of getting the free energy differences of each nucleotide.
         TODO: Add unit tests
         """
-        return -(self.stat_barrier + np.einsum("ij,ij->i", seq, self.mat))
+        return -(self.stat_barrier + np.einsum("ij,ij->i", seq, self.energy_mat))
 
     def get_log_rate(self, seq):
         """TODO: Add unit tests and documentation
@@ -184,7 +188,7 @@ class RateFunc:
         """
         bi, ei = self.input_range
         return np.log(self.base_rate) - (
-            self.stat_barrier + np.einsum("ij,ij", seq[bi:ei], self.mat)
+            self.stat_barrier + np.einsum("ij,ij", seq[bi:ei], self.energy_mat)
         )
 
     def get_rate(self, seq):
@@ -202,7 +206,7 @@ class RateFunc:
         """
         bi, ei = self.input_range
         return self.base_rate * np.exp(
-            -(self.stat_barrier + np.einsum("ij,ij", seq[bi:ei], self.mat))
+            -(self.stat_barrier + np.einsum("ij,ij", seq[bi:ei], self.energy_mat))
         )
 
 
@@ -456,14 +460,16 @@ class KineticModel:
             temp_seq = list(self.template)
             # 1. Generate all sequences to mutate
             seq_arr = np.repeat([temp_seq], npoints, axis=0)
-            # mut_num = mut_num if mut_num > 0 else len(temp_seq) + mut_num
             opt_dict = {}
             for key in seq_values:
                 opt_dict[key] = [v for v in seq_values if v != key]
+            # 2. Prep for random mutations
+            prob_weights = np.array([comb(len(temp_seq), k) for k in mut_num])
+            prob_weights /= prob_weights.sum()
 
             for i in range(1, npoints):
                 ind_choice = rng.choice(
-                    len(temp_seq), rng.choice(mut_num), replace=False
+                    len(temp_seq), rng.choice(mut_num, p=prob_weights), replace=False
                 )
                 for mut_ind in ind_choice:
                     mut_label = seq_arr[i, mut_ind]

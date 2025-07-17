@@ -1,0 +1,64 @@
+# Example of a parameter file
+Title: "test_4ring"
+Input:
+  seq_length: 21
+  template: "AAAAAAAAAAAAAAAAAAAAA"
+  values: ["A", "B"]
+States:
+  - "0"
+  - "1"
+  - "2"
+  - "3"
+Rates:
+  - name: "k_{01}"
+    state_list: ["0", "1"]
+    base_rate: 1.
+    stat_barrier: 0
+    input_range: [0, 3]
+    weight_distr: "free_energy_mat(length, [0.0, 1.0])"
+
+  - name: "k_{10}"
+    state_list: ["1", "0"]
+    base_rate: 1.
+    stat_barrier: 0
+    input_range: [3, 6]
+    weight_distr: "free_energy_mat(length, [0.0, -2.0])"
+
+  - name: "k_{12}"
+    state_list: ["1", "2"]
+    base_rate: 1.
+    stat_barrier: 0
+    input_range: [6, 9]
+    weight_distr: "free_energy_mat(length, [0.0, 2.0])"
+
+  - name: "k_{21}"
+    state_list: ["2", "1"]
+    base_rate: 1.
+    stat_barrier: 0
+    input_range: [9, 12]
+    weight_distr: "free_energy_mat(length, [0.0, -3.0])"
+
+  - name: "k_{23}"
+    state_list: ["2", "3"]
+    base_rate: 1.
+    stat_barrier: 0
+    input_range: [12, 15]
+    weight_distr: "free_energy_mat(length, [0.0, 3.0])"
+
+  - name: "k_{32}"
+    state_list: ["3", "2"]
+    base_rate: 1.
+    stat_barrier: 0
+    input_range: [15, 18]
+    weight_distr: "free_energy_mat(length, [0.0, -4.0])"
+
+  - name: "k_{30}"
+    state_list: ["3", "0"]
+    base_rate: 1.
+    stat_barrier: 0
+    input_range: [18, 21]
+    weight_distr: "free_energy_mat(length, [0, 3.5])"
+Data:
+  npoints: 1000
+  contrib_rate_names: ["k_{30}"]
+  mut_num: [0, 1, 2]
