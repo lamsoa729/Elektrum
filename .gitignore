@@ -2,7 +2,7 @@
 *.txt
 data/*
 models/*
-outputs/*
+**/outputs/
 baselines/*
 demos/*
 *.out
@@ -11,6 +11,24 @@ __pycache__/
 *.py[cod]
 *$py.class
 **.DS_Store
+**.pkl
+**.zip
+**.tar.gz
+
+
+# LaTeX files
+*.aux
+*.bbl
+*.blg
+*.dvi
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+*.pdfsync
+*.nav
 
 # C extensions
 *.so
