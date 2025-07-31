@@ -1,0 +1,64 @@
+\documentclass{article}
+\usepackage{amsmath, amssymb}
+
+\begin{document}
+
+\section*{Nonlinear Regression with Binary-Encoded Inputs}
+
+\subsection*{Problem Setup}
+
+Let \( k \in \mathbb{R}_+^n \) be a real-valued positive vector input to a known nonlinear function \( f(k) \). Each component \( k_i \) has exactly two possible values: \( a_i > 0 \) and \( b_i > 0 \). 
+
+Define a binary selector vector \( s \in \{0, 1\}^n \) such that each element \( s_i \) determines whether \( k_i = a_i \) or \( k_i = b_i \), via the rule:
+\[
+k_i(s) = (1 - s_i) a_i + s_i b_i
+\]
+Thus, the full vector \( k(s) \in \mathbb{R}_+^n \) is a function of the binary selector vector \( s \).
+
+Assume:
+\begin{itemize}
+    \item The function \( f : \mathbb{R}_+^n \to \mathbb{R} \) is known and differentiable.
+    \item You observe the output values \( f(k(s^{(j)})) = y^{(j)} \) for several distinct binary vectors \( s^{(j)} \), for \( j = 1, \dots, m \).
+\end{itemize}
+
+\subsection*{Goal}
+
+Given:
+\begin{itemize}
+    \item The known function \( f \),
+    \item A dataset of binary vectors \( \{s^{(j)}\}_{j=1}^m \),
+    \item The corresponding outputs \( \{y^{(j)}\}_{j=1}^m \),
+\end{itemize}
+Infer the unknown values of \( \{a_i, b_i\}_{i=1}^n \) — that is, recover the mapping from binary space to real-valued vector \( k(s) \).
+
+\subsection*{Inference Considerations}
+
+The inference problem is solvable under the following conditions:
+\begin{itemize}
+    \item \textbf{Sufficient Data}: There are enough distinct \( s^{(j)} \) vectors to uniquely determine all \( 2n \) unknowns (i.e., \( a_i \) and \( b_i \) for each component).
+    \item \textbf{Injectivity}: The function \( f \) must be sufficiently sensitive to changes in \( k \) such that different \( k(s) \) lead to distinguishable outputs.
+    \item \textbf{Nonlinearity}: The function \( f \) may introduce non-convexities, making global optimization challenging.
+\end{itemize}
+
+\subsection*{Solution Approach}
+
+Let the full parameter vector be:
+\[
+\theta = (a_1, \dots, a_n, b_1, \dots, b_n) \in \mathbb{R}_+^{2n}
+\]
+Define the mapping:
+\[
+k(s; \theta)_i = (1 - s_i) a_i + s_i b_i
+\]
+Given the dataset \( \{(s^{(j)}, y^{(j)})\}_{j=1}^m \), define the objective function as the sum of squared residuals:
+\[
+L(\theta) = \sum_{j=1}^m \left( f(k(s^{(j)}; \theta)) - y^{(j)} \right)^2
+\]
+Minimize \( L(\theta) \) using a nonlinear optimization method such as L-BFGS-B, subject to positivity constraints \( \theta_i > 0 \).
+
+This yields the estimated parameters:
+\[
+\hat{\theta} = \arg\min_{\theta \in \mathbb{R}_+^{2n}} L(\theta)
+\]
+
+\end{document}

@@ -22,7 +22,7 @@ Rates:
     base_rate: 1.
     stat_barrier: 0
     input_range: [1, 2]
-    weight_distr: "single_free_energy_mat_from_kinetic_rates(rate_of_species=([1.0, 5.0]))"
+    weight_distr: "single_free_energy_mat_from_kinetic_rates(rate_of_species=([1.0, 2.0]))"
 
   - name: "k_{12}"
     state_list: ["1", "2"]
@@ -59,6 +59,6 @@ Rates:
     input_range: [6, 7]
     weight_distr: "single_free_energy_mat_from_kinetic_rates(rate_of_species=([4.0, .5]))"
 Data:
-  npoints: 1000
+  npoints: 200
   contrib_rate_names: ["k_{30}"]
-  mut_num: [0, 1, 2, 3, 4]
+  mut_num: [0, 1, 2, 3, 4, 5]

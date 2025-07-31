@@ -52,18 +52,18 @@ Rates:
     input_range: [10, 15]
     weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
 
-  - name: "k_{20}"
-    state_list: ["2", "0"]
-    base_rate: .01
-    stat_barrier: 0
-    input_range: [10, 15]
-    weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
-
   - name: "k_{30}"
     state_list: ["3", "0"]
     base_rate: .01
     stat_barrier: 0
     input_range: [15, 20]
+    weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
+
+  - name: "k_{20}"
+    state_list: ["2", "0"]
+    base_rate: .01
+    stat_barrier: 0
+    input_range: [10, 15]
     weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
 Data:
   npoints: 200
