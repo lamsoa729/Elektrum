@@ -1,0 +1,107 @@
+Data:
+  contrib_rate_names:
+  - k_{30}
+  mut_num:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  npoints: 2000
+Input:
+  seq_length: 7
+  template: AAAAAAA
+  values:
+  - A
+  - B
+Rates:
+- input_range:
+  - 0
+  - 1
+  name: k_{01}
+  rate_vals:
+  - 1.4645560577056347
+  - 0.5265441268622334
+  state_list:
+  - '0'
+  - '1'
+  weight_distr: single_free_energy_mat_from_kinetic_rates(rate_of_species=([1.4645560577056347,
+    0.5265441268622334]))
+- input_range:
+  - 1
+  - 2
+  name: k_{10}
+  rate_vals:
+  - 1.192486408634931
+  - 5.215181593861036
+  state_list:
+  - '1'
+  - '0'
+  weight_distr: single_free_energy_mat_from_kinetic_rates(rate_of_species=([1.192486408634931,
+    5.215181593861036]))
+- input_range:
+  - 2
+  - 3
+  name: k_{12}
+  rate_vals:
+  - 1.1973487899732174
+  - 0.9546143957984158
+  state_list:
+  - '1'
+  - '2'
+  weight_distr: single_free_energy_mat_from_kinetic_rates(rate_of_species=([1.1973487899732174,
+    0.9546143957984158]))
+- input_range:
+  - 3
+  - 4
+  name: k_{21}
+  rate_vals:
+  - 1.1911761183464051
+  - 5.655793961323686
+  state_list:
+  - '2'
+  - '1'
+  weight_distr: single_free_energy_mat_from_kinetic_rates(rate_of_species=([1.1911761183464051,
+    5.655793961323686]))
+- input_range:
+  - 4
+  - 5
+  name: k_{23}
+  rate_vals:
+  - 3.5368080279975054
+  - 2.8017695740826536
+  state_list:
+  - '2'
+  - '3'
+  weight_distr: single_free_energy_mat_from_kinetic_rates(rate_of_species=([3.5368080279975054,
+    2.8017695740826536]))
+- input_range:
+  - 5
+  - 6
+  name: k_{32}
+  rate_vals:
+  - 2.5507397972775245
+  - 5.688872868924188
+  state_list:
+  - '3'
+  - '2'
+  weight_distr: single_free_energy_mat_from_kinetic_rates(rate_of_species=([2.5507397972775245,
+    5.688872868924188]))
+- input_range:
+  - 6
+  - 7
+  name: k_{30}
+  rate_vals:
+  - 4.321183570749724
+  - 3.457654543127615
+  state_list:
+  - '3'
+  - '0'
+  weight_distr: single_free_energy_mat_from_kinetic_rates(rate_of_species=([4.321183570749724,
+    3.457654543127615]))
+States:
+- '0'
+- '1'
+- '2'
+- '3'
+Title: test_4ring

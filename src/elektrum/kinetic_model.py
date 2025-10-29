@@ -19,107 +19,11 @@ from elektrum.kinetic_model_helpers import (
     single_free_energy_mat,
     single_free_energy_mat_from_kinetic_rates,
 )
-
-
-def convert_nn_rate_to_rate_dict(layer_attrs: dict) -> dict:
-    src_st, trg_st = layer_attrs["SOURCE"], layer_attrs["TARGET"]
-    input_range = [
-        layer_attrs["RANGE_ST"],
-        layer_attrs["RANGE_ST"] + layer_attrs["RANGE_D"],
-    ]
-    ks = layer_attrs["kernel_size"]
-    rate_name = "k_{}{}".format(src_st, trg_st)
-    rate_dict = {
-        "name": rate_name,
-        "state_list": [src_st, trg_st],
-        "input_range": input_range,
-        "kernel_size": ks,
-    }
-    rate_dict.update(**layer_attrs)
-    return rate_dict
-
-
-def modelSpace_to_modelParams(model_arcs):
-    """Convert a neural network 'model space' to kinetic model parameters.
-
-    Example yaml config file for model:
-
-    States: [ '0', '1', '2', '3' ]
-    Rates:
-    - name: "k_{01}"
-        state_list: ['0', '1']
-        input_range: [5,10]
-
-    - name: "k_{10}"
-        state_list: ['1', '0']
-        input_range: [10,15]
-    Data:
-    - contrib_rate_names: ['k_{30}']
-    """
-    kinetic_model_params = {
-        "States": set([]),
-        "Rates": [],
-        "Data": {"contrib_rate_names": []},
-    }
-    states = sorted(
-        set(
-            [
-                s
-                for x in model_arcs
-                for s in (x.Layer_attributes["SOURCE"], x.Layer_attributes["TARGET"])
-            ]
-        )
-    )
-    assert states
-    # Create lookup table to place kinetic rates in a sparse matrix.
-    # See comment below definition for 'scatter_nd' variable
-    scatter_nd_lookup = {s: i for i, s in enumerate(states)}
-    for arc in model_arcs:
-        if not arc.Layer_attributes.get("EDGE", True):
-            continue
-        rate_dict = convert_nn_rate_to_rate_dict(arc.Layer_attributes)
-
-        # Update the state list
-        src_st, trg_st = rate_dict["state_list"]
-        kinetic_model_params["States"].add(src_st)
-        kinetic_model_params["States"].add(trg_st)
-
-        # Scatter a flattened kinetic matrix to a sparse matrix as specified by indices.
-        # scatter_nd: source is draining, source->target is increasing
-        # For more on scatter_nd see https://www.tensorflow.org/api_docs/python/tf/scatter_nd
-        scatter_nd = [
-            ((scatter_nd_lookup[src_st], scatter_nd_lookup[src_st]), -1),
-            ((scatter_nd_lookup[trg_st], scatter_nd_lookup[src_st]), +1),
-        ]
-        rate_dict["scatter_nd"] = scatter_nd
-
-        # Update the rate list
-        kinetic_model_params["Rates"] += [rate_dict]
-
-        # Update the activity contribution list
-        if arc.Layer_attributes.get("CONTRIB", False):
-            kinetic_model_params["Data"]["contrib_rate_names"].append(rate_dict["name"])
-
-    # Clean up state list
-    kinetic_model_params["States"] = sorted(list(kinetic_model_params["States"]))
-    return kinetic_model_params
-
-
-def modelParams_to_modelSpace(model_params):
-    """Convert parameters from a kinetic model to a neural network model space."""
-    scatter_nd_lookup = {s: i for i, s in enumerate(model_params["States"])}
-    for rate in model_params["Rates"]:
-        rate["kernel_size"] = 1
-        rate["RANGE_ST"] = rate["input_range"][0]
-        rate["RANGE_D"] = rate["input_range"][1] - rate["input_range"][0]
-        s, t = rate["state_list"]
-        # scatter_nd: source is draining, source->target is increasing
-        scatter_nd = [
-            ((scatter_nd_lookup[s], scatter_nd_lookup[s]), -1),
-            ((scatter_nd_lookup[t], scatter_nd_lookup[s]), +1),
-        ]
-        rate["scatter_nd"] = scatter_nd
-    return model_params
+from elektrum.model_space_utils import (
+    convert_nn_rate_to_rate_dict,
+    modelSpace_to_modelParams,
+    modelParams_to_modelSpace,
+)
 
 
 class RateFunc:
@@ -165,7 +69,20 @@ class RateFunc:
         if self.is_nn_rate:
             # TODO This is not the correct position weight matrix
             return np.zeros((length, 4))
-        return eval(self.weight_distr)
+
+        allowed_globals = {
+            "np": np,
+            "gen_pos_weight_mat": gen_pos_weight_mat,
+            "nuc_distr": nuc_distr,
+            "free_energy_mat": free_energy_mat,
+            "sigmoid": sigmoid,
+            "make_encoders": make_encoders,
+            "single_free_energy_mat": single_free_energy_mat,
+            "single_free_energy_mat_from_kinetic_rates": single_free_energy_mat_from_kinetic_rates,
+        }
+        return eval(
+            self.weight_distr, allowed_globals, {"self": self, "length": length}
+        )
 
     def get_log_rate_vec(self, seq):
         """Equivalent of getting the free energy differences of each nucleotide.
