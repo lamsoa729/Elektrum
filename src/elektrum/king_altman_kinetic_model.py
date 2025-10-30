@@ -132,11 +132,25 @@ class KingAltmanKineticModel(KineticModel):
     def get_activity(self, seq: str) -> float:
         """Compute activity for a raw sequence string using precomputed contributors."""
         # Use base class encoders
-        tmp = self.lab_enc.transform(list(seq))
-        seq_ohe = self.one_enc.transform(tmp.reshape(-1, 1))
+        seq_ohe = self.generate_ohe_from_seq(seq)
         activity = 0.0
         for rate, occ in zip(self.contrib_rates, self.contrib_occupancy_funcs):
             activity += rate.get_rate(seq_ohe) * occ(seq_ohe)
+        return activity
+
+    def get_eigen_activity(self, seq: str) -> float:
+        """Compute activity for a one-hot encoded sequence using precomputed contributors."""
+        eigval, eigvec = np.linalg.eig(self.get_kinetic_mat_for_seq(seq))
+        steady_state_index = np.argmin(np.abs(eigval))
+        steady_state_vec = eigvec[:, steady_state_index]
+        steady_state_vec = steady_state_vec / np.sum(steady_state_vec)
+        state_contrib = {r.state_list[0]: r for r in self.contrib_rates}
+        seq_ohe = self.generate_ohe_from_seq(seq)
+        activity = 0.0
+        for i, state in enumerate(self.states):
+            rate = state_contrib.get(state, None)
+            if rate:
+                activity += steady_state_vec[i] * rate.get_rate(seq_ohe)
         return activity
 
     def get_ka_pattern_mat(self) -> np.ndarray:
