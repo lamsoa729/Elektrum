@@ -3,6 +3,8 @@ from pathlib import Path
 from typing import List, Union
 import numpy as np
 import pandas as pd
+import h5py
+import yaml
 
 from .kinetic_model import KineticModel
 
@@ -167,7 +169,8 @@ class KingAltmanKineticModel(KineticModel):
         npoints: int = 1000,
         rng_seed: int = 1234,
         pheno_map: str = None,
-        mut_num: int = None,
+        mut_num: Union[int, List[int], None] = None,
+        save_hdf5: bool = False,
         **kwargs,
     ):
         """Generate simulated CSV with rates, activity and phenotype columns."""
@@ -181,8 +184,7 @@ class KingAltmanKineticModel(KineticModel):
         pheno_map_func = eval(pheno_map) if pheno_map else (lambda x: x)
 
         for i, seq in enumerate(seq_arr):
-            tmp = self.lab_enc.transform(seq)
-            seq_ohe = self.one_enc.transform(tmp.reshape(-1, 1))
+            seq_ohe = self.generate_ohe_from_seq("".join(seq))
             for j, rate in enumerate(self.rates):
                 rates_arr[i, j] = rate.get_rate(seq_ohe)
             for rate, occ in zip(self.contrib_rates, self.contrib_occupancy_funcs):
@@ -190,49 +192,68 @@ class KingAltmanKineticModel(KineticModel):
             pheno_arr[i] = pheno_map_func(act_arr[i])
 
         seq_list = ["".join(seq) for seq in seq_arr.tolist()]
-        combined = np.hstack(
-            (
-                np.array(seq_list).reshape(-1, 1),
-                rates_arr,
-                act_arr.reshape(-1, 1),
-                pheno_arr.reshape(-1, 1),
-            )
-        )
-        df = pd.DataFrame(combined)
-        df.columns = (
+
+        header = (
             ["seq"]
             + [r.name for r in self.rates]
             + ["raw_activity", "phenotype_activity"]
         )
+        dtypes = ["S50"] + ["f4"] * (len(self.rates) + 2)
+        dt = np.dtype([(name, dtype) for name, dtype in zip(header, dtypes)])
+
+        data = np.zeros(npoints, dtype=dt)
+        data["seq"] = seq_list
+        for j, rate in enumerate(self.rates):
+            data[rate.name] = rates_arr[:, j]
+        data["raw_activity"] = act_arr
+        data["phenotype_activity"] = pheno_arr
+
+        if save_hdf5:
+            self.save_hdf5_files(data)
+            return
+
+        self.save_csv_files(data)
+
+    def save_csv_files(self, data) -> None:
+        """Save CSV file with rates, activity and phenotype columns."""
+        assert self.contrib_rate_names
+        df = pd.DataFrame(data)
+        df.columns = data.dtype.names
         for col in df.columns:
             if col != "seq":
                 df[col] = pd.to_numeric(df[col], errors="coerce")
-        file_name = Path(self.save_str + ".csv")
-        df.to_csv(file_name, sep=",", float_format="%.5g", index=False)
-        # Save matrices
+        df.to_csv(
+            Path(self.save_str + ".csv"), sep=",", float_format="%.5g", index=False
+        )
         np.savetxt(
             Path(self.save_str + "_ka_mat.nptxt"), self.get_ka_pattern_mat(), fmt="%d"
         )
-        self.save_rate_contrib_matrix(self.contrib_rate_names)
+        np.savetxt(
+            Path(self.save_str + "_rate_contrib_mat.nptxt"),
+            self.get_rate_contrib_matrix(),
+            fmt="%d",
+        )
 
-    def save_rate_contrib_matrix(
-        self, contrib_rate_names: List[str], save: bool = True
-    ) -> np.ndarray:
+    def save_hdf5_files(self, data) -> None:
+        """Save HDF5 file with rates, activity and phenotype columns."""
+        # Create structured array with mixed types given data
+        with h5py.File(Path(self.save_str + ".h5"), "w") as f:
+            f.create_dataset("data", data=data)
+            ka_mat = self.get_ka_pattern_mat()
+            f.create_dataset("ka_pattern_matrix", data=ka_mat)
+            contrib_mat = self.get_rate_contrib_matrix()
+            f.create_dataset("rate_contrib_matrix", data=contrib_mat)
+            f.attrs["params"] = yaml.dump(self.model_params)
+
+    def get_rate_contrib_matrix(self) -> np.ndarray:
         denom_list = self.get_denominator()
         contrib_mat = np.zeros((len(self.rates), len(denom_list)), dtype=int)
         for i, crate in enumerate(self.rates):
-            if crate.name in contrib_rate_names:
+            if crate.name in self.contrib_rate_names:
                 start_state = crate.state_list[0]
                 nterms = self.get_numerator(start_state)
                 for j, kap in enumerate(denom_list):
                     if kap in nterms:
                         contrib_mat[i, j] = 1
-        if save:
-            np.savetxt(
-                Path(self.save_str + "_rate_contrib_mat.nptxt"), contrib_mat, fmt="%d"
-            )
-        return contrib_mat
 
-    def get_rate_contrib_matrix(self) -> np.ndarray:
-        contrib_rate_names = self.model_params["Data"].get("contrib_rate_names", [])
-        return self.save_rate_contrib_matrix(contrib_rate_names, save=False)
+        return contrib_mat
