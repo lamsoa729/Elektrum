@@ -1,0 +1,55 @@
+# Example of a parameter file
+Title: "test_4proofreading"
+Input:
+  seq_length: 8
+  template: "AAAAAAAA"
+  values: ["A", "B"]
+States:
+  - "0"
+  - "1"
+  - "2"
+  - "3"
+Rates:
+  - name: "k_{01}"
+    state_list: ["0", "1"]
+    input_range: [0, 1]
+    weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
+
+  - name: "k_{10}"
+    state_list: ["1", "0"]
+    input_range: [1, 2]
+    weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
+
+  - name: "k_{12}"
+    state_list: ["1", "2"]
+    input_range: [2, 3]
+    weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
+
+  - name: "k_{21}"
+    state_list: ["2", "1"]
+    input_range: [3, 4]
+    weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
+
+  - name: "k_{23}"
+    state_list: ["2", "3"]
+    input_range: [4, 5]
+    weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
+
+  - name: "k_{32}"
+    state_list: ["3", "2"]
+    input_range: [5, 6]
+    weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
+
+  - name: "k_{30}"
+    state_list: ["3", "0"]
+    input_range: [6, 7]
+    weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
+
+  - name: "k_{20}"
+    state_list: ["2", "0"]
+    input_range: [7, 8]
+    weight_distr: "nuc_distr(length, ind_scale=[1.0,-1.0])"
+Data:
+  npoints: 200
+  contrib_rate_names: ["k_{30}"]
+  mut_num: [1, 2, 3, 4, 5, 6, 7]

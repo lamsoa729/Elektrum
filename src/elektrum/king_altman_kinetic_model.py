@@ -177,6 +177,9 @@ class KingAltmanKineticModel(KineticModel):
         assert self.contrib_rate_names
         rng = np.random.default_rng(rng_seed)
         seq_arr = self.get_mutated_seqs(npoints, mut_num, rng)
+        seq_values = self.model_params["Input"]["values"]
+        if len(seq_values) == 2:
+            seq_arr[1, :] = seq_values[1]
 
         rates_arr = np.zeros((npoints, len(self.rates)))
         act_arr = np.zeros(npoints)

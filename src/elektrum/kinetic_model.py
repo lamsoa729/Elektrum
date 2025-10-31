@@ -393,7 +393,6 @@ class KineticModel:
             for pos in positions:
                 original_nuc = seq_arr[i, pos]
                 seq_arr[i, pos] = rng.choice(opt_dict[original_nuc])
-
         return seq_arr
 
     def _generate_fixed_mutations(
