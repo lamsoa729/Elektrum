@@ -55,7 +55,7 @@ if __name__ == "__main__":
     dataset_files = sorted(dataset_files, key=lambda x: int(x.stem.split("_")[-1]))
 
     rate_matrices = []
-    for i in range(10):
+    for i in range(len(dataset_files)):
         # Time each iteration
         start_time = time.perf_counter()
         dataset_file = dataset_files[i]

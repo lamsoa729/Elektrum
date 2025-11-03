@@ -83,8 +83,8 @@ def extend_sequences(sequences, num_extensions=1, random_state=None):
 
 def load_kinetic_data(
     filepath: str,
-    template_seq: Union[str, None] = "AAAAAAA",
-    mutant_seq: Union[str, None] = "BBBBBBB",
+    template_seq: Union[str, None] = None,
+    mutant_seq: Union[str, None] = None,
 ):
     """Load and preprocess kinetic model data from HDF5 file.
 
